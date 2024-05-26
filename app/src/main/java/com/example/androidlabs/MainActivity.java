@@ -1,59 +1,60 @@
 package com.example.androidlabs;
 
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
-import android.view.View;
+import android.preference.PreferenceManager;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
-import com.google.android.material.snackbar.Snackbar;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
-
-    EditText editText;
-    TextView result;
-    Button buttonSwitch;
-    CheckBox checkBox;
+    private EditText nameEditText;
+    private static final int REQUEST_CODE = 1;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_contraint);
+        setContentView(R.layout.activity_main);
 
-        editText = (EditText) findViewById(R.id.edit_text);
-        result = (TextView) findViewById(R.id.text_view);
-        buttonSwitch = (Button) findViewById(R.id.press_btn);
-        checkBox = (CheckBox) findViewById(R.id.check_box);
+        nameEditText = findViewById(R.id.editTextName);
+        Button nextButton = findViewById(R.id.buttonNext);
 
-        final AppCompatActivity context = this;
-        buttonSwitch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String text = editText.getText().toString();
-                result.setText(text);
-                Toast.makeText(context, getString(R.string.toast_message), Toast.LENGTH_LONG).show();
-            }
+        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        String savedName = sharedPreferences.getString("user_name", "");
+
+        if (!savedName.isEmpty()) {
+            nameEditText.setText(savedName);
+        }
+
+        nextButton.setOnClickListener(v -> {
+            String name = nameEditText.getText().toString();
+            Intent intent = new Intent(MainActivity.this, NameActivity.class);
+            intent.putExtra("user_name", name);
+            startActivityForResult(intent, REQUEST_CODE);
         });
+    }
 
-        checkBox.setOnCheckedChangeListener(new
-                                                    CompoundButton.OnCheckedChangeListener() {
-                                                        @Override
-                                                        public void onCheckedChanged(CompoundButton cb, boolean isChecked) {
-                                                            if (isChecked) {
-                                                                Snackbar.make(cb, getString(R.string.snack_on), Snackbar.LENGTH_LONG)
-                                                                        .setAction("undo", click -> cb.setChecked(!isChecked))
-                                                                        .show();
-                                                            } else {
-                                                                Snackbar.make(cb, getString(R.string.snack_off), Snackbar.LENGTH_LONG)
-                                                                        .setAction("undo", click -> cb.setChecked(!isChecked))
-                                                                        .show();
-                                                            }
-                                                        }
-                                                    });
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("user_name", nameEditText.getText().toString());
+        editor.apply();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE) {
+            if (resultCode == 0) {
+                nameEditText.setText("");
+            } else if (resultCode == 1) {
+                finish();
+            }
+        }
     }
 }
-
-
