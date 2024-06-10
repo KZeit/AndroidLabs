@@ -1,25 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/textViewEnterName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/enter_name" />
-
-    <EditText
-        android:id="@+id/editTextName"
+    <ListView
+        android:id="@+id/todo_list"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:hint="@string/name_hint" />
+        android:layout_height="0dp"
+        android:layout_above="@+id/bottom_layout"
+        android:layout_alignParentTop="true" />
 
-    <Button
-        android:id="@+id/buttonNext"
-        android:layout_width="wrap_content"
+    <RelativeLayout
+        android:id="@+id/bottom_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/next" />
-</LinearLayout>
+        android:layout_alignParentBottom="true"
+        android:padding="16dp">
+
+        <EditText
+            android:id="@+id/edit_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/type_here"
+            android:layout_alignParentStart="true"
+            android:layout_toStartOf="@+id/urgent_switch"
+            android:layout_toLeftOf="@+id/urgent_switch" />
+
+        <Switch
+            android:id="@+id/urgent_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@+id/add_button"
+            android:layout_toLeftOf="@+id/add_button"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:text="@string/urgent" />
+
+        <Button
+            android:id="@+id/add_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:text="@string/add" />
+    </RelativeLayout>
+</RelativeLayout>

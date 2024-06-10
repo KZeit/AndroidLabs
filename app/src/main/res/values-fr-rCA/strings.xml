@@ -1,10 +1,15 @@
 <resources>
-    <string name="app_name">Lab3</string>
-    <string name="enter_name">Entrez votre nom</string>
-    <string name="name_hint">Votre nom</string>
+    <string name="app_name">ToDo App</string>
+    <string name="type_here">Tapez ici</string>
+    <string name="urgent">Urgent</string>
+    <string name="add">Ajouter</string>
+    <string name="delete_confirmation">Voulez-vous supprimer ceci ?</string>
+    <string name="selected_row">La ligne sélectionnée est : %1$d</string>
+    <string name="delete">Supprimer</string>
+    <string name="cancel">Annuler</string>
     <string name="next">Suivant</string>
-    <string name="welcome">Bienvenue!</string>
-    <string name="thank_you">Merci</string>
-    <string name="dont_call_me">Ne m\'appelez pas ça</string>
-    <string name="toggle_switch">Basculer l\'interrupteur</string>
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
+    <string name="previous">Précédent</string>
+    <string name="first_fragment_label">Premier Fragment</string>
+    <string name="second_fragment_label">Deuxième Fragment</string>
 </resources>
