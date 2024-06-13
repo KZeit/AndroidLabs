@@ -1,15 +1,10 @@
 <resources>
-    <string name="app_name">ToDo App</string>
-    <string name="type_here">Tapez ici</string>
-    <string name="urgent">Urgent</string>
-    <string name="add">Ajouter</string>
-    <string name="delete_confirmation">Voulez-vous supprimer ceci ?</string>
-    <string name="selected_row">La ligne sélectionnée est : %1$d</string>
-    <string name="delete">Supprimer</string>
-    <string name="cancel">Annuler</string>
+    <string name="app_name">ListeDeTâches</string>
+    <string name="todo_hint">Entrez votre tâche</string>
+    <string name="add_button_text">Ajouter</string>
     <string name="next">Suivant</string>
-    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
     <string name="previous">Précédent</string>
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
     <string name="first_fragment_label">Premier Fragment</string>
     <string name="second_fragment_label">Deuxième Fragment</string>
 </resources>

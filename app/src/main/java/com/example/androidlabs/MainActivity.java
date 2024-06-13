@@ -1,57 +1,68 @@
 package com.example.androidlabs;
 
+import android.database.Cursor;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.BaseAdapter;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Switch;
-import androidx.appcompat.app.AlertDialog;
+
 import androidx.appcompat.app.AppCompatActivity;
-import java.util.ArrayList;
+
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private List<TodoItem> todoList = new ArrayList<>();
-    private TodoAdapter todoAdapter;
-    private EditText editText;
-    private Switch urgentSwitch;
+    private TodoDataSource dataSource;
+    private ArrayAdapter<TodoItem> adapter;
+    private List<TodoItem> todoItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        dataSource = new TodoDataSource(this);
+        dataSource.open();
+
+        todoItems = dataSource.getAllTodoItems();
+
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, todoItems);
+
         ListView listView = findViewById(R.id.todo_list);
-        editText = findViewById(R.id.edit_text);
-        urgentSwitch = findViewById(R.id.urgent_switch);
-        Button addButton = findViewById(R.id.add_button);
+        listView.setAdapter(adapter);
 
-        todoAdapter = new TodoAdapter(this, todoList);
-        listView.setAdapter(todoAdapter);
-
-        addButton.setOnClickListener(view -> {
-            String text = editText.getText().toString();
-            boolean isUrgent = urgentSwitch.isChecked();
-            todoList.add(new TodoItem(text, isUrgent));
-            editText.setText("");
-            todoAdapter.notifyDataSetChanged();
-        });
-
-        listView.setOnItemLongClickListener((adapterView, view, position, id) -> {
-            new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("Do you want to delete this?")
-                    .setMessage("The selected row is: " + position)
-                    .setPositiveButton("Delete", (dialogInterface, i) -> {
-                        todoList.remove(position);
-                        todoAdapter.notifyDataSetChanged();
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
+        listView.setOnItemLongClickListener((parent, view, position, id) -> {
+            TodoItem item = adapter.getItem(position);
+            if (item != null) {
+                dataSource.deleteTodoItem(item.getId());
+                adapter.remove(item);
+                adapter.notifyDataSetChanged();
+            }
             return true;
         });
+
+        Button addButton = findViewById(R.id.add_button);
+        EditText todoEditText = findViewById(R.id.todo_edit_text);
+
+        addButton.setOnClickListener(v -> {
+            String todoText = todoEditText.getText().toString();
+            int urgency = 1; // You might want to get this value from a user input
+            TodoItem newItem = new TodoItem(0, todoText, urgency);
+            dataSource.addTodoItem(newItem);
+            todoItems.add(newItem);
+            adapter.notifyDataSetChanged();
+            todoEditText.setText("");
+        });
+
+        // Get cursor and print cursor info
+        Cursor cursor = dataSource.getAllTodoItemsCursor();
+        dataSource.printCursor(cursor);
+    }
+
+    @Override
+    protected void onDestroy() {
+        dataSource.close();
+        super.onDestroy();
     }
 }

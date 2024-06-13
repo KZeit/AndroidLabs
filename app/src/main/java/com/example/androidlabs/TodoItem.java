@@ -1,19 +1,30 @@
 package com.example.androidlabs;
 
 public class TodoItem {
-    private String text;
-    private boolean urgent;
+    private int id;
+    private String todo;
+    private int urgency;
 
-    public TodoItem(String text, boolean urgent) {
-        this.text = text;
-        this.urgent = urgent;
+    public TodoItem(int id, String todo, int urgency) {
+        this.id = id;
+        this.todo = todo;
+        this.urgency = urgency;
     }
 
-    public String getText() {
-        return text;
+    public int getId() {
+        return id;
     }
 
-    public boolean isUrgent() {
-        return urgent;
+    public String getTodo() {
+        return todo;
+    }
+
+    public int getUrgency() {
+        return urgency;
+    }
+
+    @Override
+    public String toString() {
+        return todo + " (Urgency: " + urgency + ")";
     }
 }
