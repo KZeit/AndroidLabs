@@ -1,68 +1,130 @@
 package com.example.androidlabs;
 
-import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.util.Log;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.List;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TodoDataSource dataSource;
-    private ArrayAdapter<TodoItem> adapter;
-    private List<TodoItem> todoItems;
+    private static final String TAG = "MainActivity";
+    private ImageView catImageView;
+    private ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        dataSource = new TodoDataSource(this);
-        dataSource.open();
+        catImageView = findViewById(R.id.catImageView);
+        progressBar = findViewById(R.id.progressBar);
 
-        todoItems = dataSource.getAllTodoItems();
-
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, todoItems);
-
-        ListView listView = findViewById(R.id.todo_list);
-        listView.setAdapter(adapter);
-
-        listView.setOnItemLongClickListener((parent, view, position, id) -> {
-            TodoItem item = adapter.getItem(position);
-            if (item != null) {
-                dataSource.deleteTodoItem(item.getId());
-                adapter.remove(item);
-                adapter.notifyDataSetChanged();
-            }
-            return true;
-        });
-
-        Button addButton = findViewById(R.id.add_button);
-        EditText todoEditText = findViewById(R.id.todo_edit_text);
-
-        addButton.setOnClickListener(v -> {
-            String todoText = todoEditText.getText().toString();
-            int urgency = 1; // You might want to get this value from a user input
-            TodoItem newItem = new TodoItem(0, todoText, urgency);
-            dataSource.addTodoItem(newItem);
-            todoItems.add(newItem);
-            adapter.notifyDataSetChanged();
-            todoEditText.setText("");
-        });
-
-        // Get cursor and print cursor info
-        Cursor cursor = dataSource.getAllTodoItemsCursor();
-        dataSource.printCursor(cursor);
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(new CatImages(this), 0, 5, TimeUnit.SECONDS);
     }
 
-    @Override
-    protected void onDestroy() {
-        dataSource.close();
-        super.onDestroy();
+    private static class CatImages implements Runnable {
+        private final MainActivity activity;
+
+        public CatImages(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        @Override
+        public void run() {
+            try {
+                JSONObject jsonObject = fetchCatJson();
+                Log.d(TAG, "Fetched JSON: " + jsonObject.toString());
+
+                if (jsonObject.has("_id")) {
+                    String imageId = jsonObject.getString("_id");
+                    String imageUrl = "https://cataas.com/cat/" + imageId;
+                    Log.d(TAG, "Constructed image URL: " + imageUrl);
+
+                    File imageFile = new File(activity.getFilesDir(), imageId + ".jpg");
+                    Bitmap bitmap;
+                    if (imageFile.exists()) {
+                        Log.d(TAG, "Loading image from cache: " + imageFile.getAbsolutePath());
+                        bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+                    } else {
+                        Log.d(TAG, "Downloading new image from URL: " + imageUrl);
+                        bitmap = downloadImage(imageUrl);
+                        saveImage(bitmap, imageFile);
+                    }
+
+                    activity.runOnUiThread(() -> {
+                        activity.catImageView.setImageBitmap(bitmap);
+                        activity.updateProgressBar();
+                    });
+                } else {
+                    Log.e(TAG, "JSON response does not contain '_id' key. Full response: " + jsonObject.toString());
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error in downloading cat image", e);
+            }
+        }
+
+        private JSONObject fetchCatJson() throws Exception {
+            URL url = new URL("https://cataas.com/cat?json=true");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.connect();
+
+            InputStream inputStream = connection.getInputStream();
+            StringBuilder jsonBuilder = new StringBuilder();
+            int read;
+            byte[] buffer = new byte[1024];
+            while ((read = inputStream.read(buffer)) != -1) {
+                jsonBuilder.append(new String(buffer, 0, read));
+            }
+            inputStream.close();
+
+            return new JSONObject(jsonBuilder.toString());
+        }
+
+        private Bitmap downloadImage(String url) throws Exception {
+            URL imageUrl = new URL(url);
+            HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
+            connection.connect();
+
+            InputStream inputStream = connection.getInputStream();
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            inputStream.close();
+
+            return bitmap;
+        }
+
+        private void saveImage(Bitmap bitmap, File file) throws Exception {
+            FileOutputStream fileOutputStream = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
+            fileOutputStream.close();
+        }
+    }
+
+    private void updateProgressBar() {
+        for (int i = 0; i < 100; i++) {
+            final int progress = i;
+            runOnUiThread(() -> progressBar.setProgress(progress));
+            try {
+                Thread.sleep(30);
+            } catch (InterruptedException e) {
+                Log.e(TAG, "Progress update interrupted", e);
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
