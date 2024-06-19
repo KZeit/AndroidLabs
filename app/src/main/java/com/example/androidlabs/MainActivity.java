@@ -1,130 +1,115 @@
 package com.example.androidlabs;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.util.Log;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-
 import androidx.appcompat.app.AppCompatActivity;
-
+import android.os.Bundle;
+import android.content.Intent;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.Toast;
+import androidx.fragment.app.FragmentManager;
+import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "MainActivity";
-    private ImageView catImageView;
-    private ProgressBar progressBar;
+    private ArrayList<String> characterNames;
+    private ArrayList<String> characterDetails;
+    private ExecutorService executorService;
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        catImageView = findViewById(R.id.catImageView);
-        progressBar = findViewById(R.id.progressBar);
+        characterNames = new ArrayList<>();
+        characterDetails = new ArrayList<>();
 
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleWithFixedDelay(new CatImages(this), 0, 5, TimeUnit.SECONDS);
-    }
-
-    private static class CatImages implements Runnable {
-        private final MainActivity activity;
-
-        public CatImages(MainActivity activity) {
-            this.activity = activity;
+        listView = findViewById(R.id.listView);
+        if (listView == null) {
+            throw new NullPointerException("ListView is null. Please check the layout file for a ListView with the ID 'listView'.");
         }
 
-        @Override
-        public void run() {
-            try {
-                JSONObject jsonObject = fetchCatJson();
-                Log.d(TAG, "Fetched JSON: " + jsonObject.toString());
+        CharacterAdapter adapter = new CharacterAdapter(this, characterNames);
+        listView.setAdapter(adapter);
 
-                if (jsonObject.has("_id")) {
-                    String imageId = jsonObject.getString("_id");
-                    String imageUrl = "https://cataas.com/cat/" + imageId;
-                    Log.d(TAG, "Constructed image URL: " + imageUrl);
+        executorService = Executors.newSingleThreadExecutor();
 
-                    File imageFile = new File(activity.getFilesDir(), imageId + ".jpg");
-                    Bitmap bitmap;
-                    if (imageFile.exists()) {
-                        Log.d(TAG, "Loading image from cache: " + imageFile.getAbsolutePath());
-                        bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
-                    } else {
-                        Log.d(TAG, "Downloading new image from URL: " + imageUrl);
-                        bitmap = downloadImage(imageUrl);
-                        saveImage(bitmap, imageFile);
-                    }
+        fetchData();
 
-                    activity.runOnUiThread(() -> {
-                        activity.catImageView.setImageBitmap(bitmap);
-                        activity.updateProgressBar();
-                    });
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String details = characterDetails.get(position);
+                Bundle bundle = new Bundle();
+                bundle.putString("details", details);
+
+                if (findViewById(R.id.detailFragmentContainer) != null) {
+                    DetailsFragment detailsFragment = new DetailsFragment();
+                    detailsFragment.setArguments(bundle);
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    fragmentManager.beginTransaction()
+                            .replace(R.id.detailFragmentContainer, detailsFragment)
+                            .commit();
                 } else {
-                    Log.e(TAG, "JSON response does not contain '_id' key. Full response: " + jsonObject.toString());
+                    Intent intent = new Intent(MainActivity.this, EmptyActivity.class);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
                 }
-            } catch (Exception e) {
-                Log.e(TAG, "Error in downloading cat image", e);
             }
-        }
-
-        private JSONObject fetchCatJson() throws Exception {
-            URL url = new URL("https://cataas.com/cat?json=true");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.connect();
-
-            InputStream inputStream = connection.getInputStream();
-            StringBuilder jsonBuilder = new StringBuilder();
-            int read;
-            byte[] buffer = new byte[1024];
-            while ((read = inputStream.read(buffer)) != -1) {
-                jsonBuilder.append(new String(buffer, 0, read));
-            }
-            inputStream.close();
-
-            return new JSONObject(jsonBuilder.toString());
-        }
-
-        private Bitmap downloadImage(String url) throws Exception {
-            URL imageUrl = new URL(url);
-            HttpURLConnection connection = (HttpURLConnection) imageUrl.openConnection();
-            connection.connect();
-
-            InputStream inputStream = connection.getInputStream();
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            inputStream.close();
-
-            return bitmap;
-        }
-
-        private void saveImage(Bitmap bitmap, File file) throws Exception {
-            FileOutputStream fileOutputStream = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
-            fileOutputStream.close();
-        }
+        });
     }
 
-    private void updateProgressBar() {
-        for (int i = 0; i < 100; i++) {
-            final int progress = i;
-            runOnUiThread(() -> progressBar.setProgress(progress));
+    private void fetchData() {
+        String urlString = "https://swapi.dev/api/people/?format=json";
+        executorService.submit(() -> {
+            StringBuilder result = new StringBuilder();
             try {
-                Thread.sleep(30);
-            } catch (InterruptedException e) {
-                Log.e(TAG, "Progress update interrupted", e);
-                Thread.currentThread().interrupt();
+                URL url = new URL(urlString);
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    result.append(line);
+                }
+                reader.close();
+
+                runOnUiThread(() -> {
+                    try {
+                        JSONObject jsonObject = new JSONObject(result.toString());
+                        JSONArray characters = jsonObject.getJSONArray("results");
+                        for (int i = 0; i < characters.length(); i++) {
+                            JSONObject character = characters.getJSONObject(i);
+                            String name = character.getString("name");
+                            characterNames.add(name);
+                            characterDetails.add(character.toString());
+                        }
+                        ((CharacterAdapter) listView.getAdapter()).notifyDataSetChanged();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this, "Failed to parse data", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Failed to fetch data", Toast.LENGTH_SHORT).show());
             }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (executorService != null) {
+            executorService.shutdown();
         }
     }
 }

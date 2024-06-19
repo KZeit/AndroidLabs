@@ -1,9 +1,15 @@
 <resources>
-    <string name="app_name">DiaporamaImageChat</string>
-    <string name="cat_image">Image de chat aléatoire</string>
+    <string name="app_name">Encyclopédie Star Wars</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="hello_world">Bonjour le monde!</string>
+    <string name="details_fragment_title">Détails du personnage</string>
+    <string name="main_activity_title">Activité principale</string>
+    <string name="empty_activity_title">Activité vide</string>
+    <string name="additional_details">Détails supplémentaires</string>
     <string name="next">Suivant</string>
-    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
     <string name="previous">Précédent</string>
-    <string name="first_fragment_label">Premier Fragment</string>
-    <string name="second_fragment_label">Deuxième Fragment</string>
+    <string name="lorem_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</string>
+    <string name="first_fragment_label">Premier fragment</string>
+    <string name="second_fragment_label">Deuxième fragment</string>
+    <string name="back_button_description">Retour</string>
 </resources>
